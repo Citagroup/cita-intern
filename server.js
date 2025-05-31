@@ -10,10 +10,13 @@ dotenv.config();
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect(process.env.MONGO_URI, {
+mongoose.connect('mongodb+srv://citamarkt:bzV28YrCBDPc8WR5@cluster0.ps9jgar.mongodb.net/cita-crm?retryWrites=true&w=majority&appName=Cluster0', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-});
+})
+.then(() => console.log("✅ MongoDB verbunden"))
+.catch((err) => console.error("❌ MongoDB Fehler:", err));
+
 
 const userSchema = new mongoose.Schema({
   name: String,
