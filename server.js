@@ -1,23 +1,21 @@
 const express = require('express');
-const app = express();
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const connectDB = require('./config/db'); // ← auslagern der DB-Verbindung
 
+const app = express();
 dotenv.config();
+connectDB(); // ← DB verbinden
+
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect('mongodb+srv://citamarkt:bzV28YrCBDPc8WR5@cluster0.ps9jgar.mongodb.net/cita-crm?retryWrites=true&w=majority&appName=Cluster0', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log("✅ MongoDB verbunden"))
-.catch((err) => console.error("❌ MongoDB Fehler:", err));
+// Mongoose-Modul erst nach Verbindung verwenden
+const mongoose = require('mongoose');
 
-
+// 🔐 User-Modell
 const userSchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true },
@@ -26,6 +24,7 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
+// 🔒 Middleware zur Token-Prüfung
 const verifyToken = (req, res, next) => {
   const token = req.headers['authorization']?.split(' ')[1];
   if (!token) return res.status(401).json({ message: 'Token fehlt' });
@@ -38,6 +37,7 @@ const verifyToken = (req, res, next) => {
   }
 };
 
+// 📩 Registrierung
 app.post('/api/register', async (req, res) => {
   const { name, email, password, role } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -49,6 +49,7 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
+// 🔐 Login
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
@@ -61,9 +62,11 @@ app.post('/api/login', async (req, res) => {
   res.json({ token, user: { name: user.name, role: user.role, id: user._id } });
 });
 
+// 👤 Eigene Daten abrufen
 app.get('/api/me', verifyToken, async (req, res) => {
   const user = await User.findById(req.user.id);
   res.json({ name: user.name, email: user.email, role: user.role });
 });
 
+// 🚀 Server starten
 app.listen(process.env.PORT || 5000, () => console.log('Server läuft auf Port 5000'));
