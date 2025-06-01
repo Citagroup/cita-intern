@@ -14,6 +14,9 @@ connectDB(); // DB verbinden
 app.use(cors());
 app.use(express.json());
 
+// 👉 Neue Report-Route einbinden
+app.use("/api/reports", require("./routes/reports"));
+
 // Fehler abfangen bei ungültigem JSON
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
